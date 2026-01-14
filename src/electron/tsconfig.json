@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["../../types"],
     // require strict types (null-save)
     "strict": true,
     // tell TypeScript to generate ESM Syntax
