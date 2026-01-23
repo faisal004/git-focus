@@ -12,5 +12,15 @@
   },
   "win": {
     "target": ["portable", "msi"]
+  },
+  "publish": {
+    "provider": "github",
+    "owner": "faisal004",
+    "repo": "electron"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": true,
+    "allowToChangeInstallationDirectory": true
   }
 }
