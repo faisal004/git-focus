@@ -9,6 +9,10 @@ electron.contextBridge.exposeInMainWorld('electron', {
   getStaticData: () => ipcInvoke('getStaticData'),
   onUpdateAvailable: (callback) => ipcOn('update-available', (_payload) => callback()),
   onUpdateDownloaded: (callback) => ipcOn('update-downloaded', (_payload) => callback()),
+  onCheckingForUpdate: (callback) => ipcOn('checking-for-update', (_payload) => callback()),
+  onUpdateNotAvailable: (callback) => ipcOn('update-not-available', (_payload) => callback()),
+  onDownloadProgress: (callback) => ipcOn('download-progress', (payload) => callback(payload)),
+  onUpdateError: (callback) => ipcOn('update-error', (payload) => callback(payload)),
   startDownload: () => ipcSend('startDownload'),
   installUpdate: () => ipcSend('installUpdate'),
 } satisfies Window['electron']);

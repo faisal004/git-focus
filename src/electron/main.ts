@@ -23,23 +23,40 @@ app.on("ready", () => {
   });
   autoUpdater.logger = console;
   autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on("checking-for-update", () => {
     console.log("checking-for-update");
-  });
-  autoUpdater.on("update-available", () => {
-    console.log("update-available");
-    mainWindow.webContents.send("update-available");
-  });
-  autoUpdater.on("update-downloaded", () => {
-    console.log("update-downloaded");
-    mainWindow.webContents.send("update-downloaded");
-  });
-  autoUpdater.on("download-progress", (progress) => {
-    console.log(`Download speed: ${progress.bytesPerSecond} - Downloaded ${progress.percent}% (${progress.transferred}/${progress.total})`);
+    mainWindow.webContents.send("checking-for-update");
   });
 
-  autoUpdater.checkForUpdatesAndNotify();
+  autoUpdater.on("update-available", (info) => {
+    console.log("update-available", info);
+    mainWindow.webContents.send("update-available");
+    // We keep manual download trigger from UI instead of auto-downloading here
+  });
+
+  autoUpdater.on("update-not-available", (info) => {
+    console.log("update-not-available", info);
+    mainWindow.webContents.send("update-not-available");
+  });
+
+  autoUpdater.on("error", (err) => {
+    console.error("auto-updater-error", err);
+    mainWindow.webContents.send("update-error", err.toString());
+  });
+
+  autoUpdater.on("update-downloaded", (info) => {
+    console.log("update-downloaded", info);
+    mainWindow.webContents.send("update-downloaded");
+  });
+
+  autoUpdater.on("download-progress", (progress) => {
+    console.log(`Download speed: ${progress.bytesPerSecond} - Downloaded ${progress.percent}% (${progress.transferred}/${progress.total})`);
+    mainWindow.webContents.send("download-progress", progress);
+  });
+
+  autoUpdater.checkForUpdates();
 
 
   ipcMainHandle("startDownload", () => {
