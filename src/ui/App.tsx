@@ -38,9 +38,6 @@ function App() {
       <UpdateNotification />
       <div className="main">
         <div>
-          Checking auto update
-        </div>
-        <div>
           <SelectOption
             onClick={() => setActiveView('CPU')}
             title="CPU"
