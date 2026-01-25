@@ -5,20 +5,26 @@ export function UpdateNotification() {
     const [statusMsg, setStatusMsg] = useState('');
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
     const [updateReady, setUpdateReady] = useState(false);
+    const [hasError, setHasError] = useState(false);
+    const [updateAvailable, setUpdateAvailable] = useState(false);
 
     useEffect(() => {
         const unsubChecking = window.electron.onCheckingForUpdate(() => {
             setStatusMsg("Checking for updates...");
             setShowNotification(true);
+            setHasError(false);
         });
 
         const unsubAvailable = window.electron.onUpdateAvailable(() => {
             setStatusMsg("Update available!");
             setShowNotification(true);
+            setUpdateAvailable(true);
+            setHasError(false);
         });
 
         const unsubNotAvailable = window.electron.onUpdateNotAvailable(() => {
-            setStatusMsg("No updates available.");
+            setStatusMsg("You're on the latest version.");
+            setUpdateAvailable(false);
             // Optionally hide after a delay
             setTimeout(() => setShowNotification(false), 3000);
         });
@@ -34,12 +40,15 @@ export function UpdateNotification() {
             setStatusMsg("Update downloaded. Ready to install.");
             setDownloadProgress(null);
             setUpdateReady(true);
+            setUpdateAvailable(false);
             setShowNotification(true);
         });
 
         const unsubError = window.electron.onUpdateError((err) => {
             setStatusMsg(`Error: ${err}`);
             setShowNotification(true);
+            setHasError(true);
+            setUpdateAvailable(false);
         });
 
         return () => {
@@ -94,7 +103,7 @@ export function UpdateNotification() {
             )}
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                {statusMsg === "Update available!" && (
+                {updateAvailable && (
                     <button onClick={handleDownload} style={buttonStyle}>
                         Download
                     </button>
@@ -106,6 +115,12 @@ export function UpdateNotification() {
                     </button>
                 )}
             </div>
+
+            {hasError && (
+                <div style={{ fontSize: '12px', color: '#ff6b6b', marginTop: '5px' }}>
+                    If you installed an older version (v0.0.5 or earlier), please manually download the latest version from GitHub.
+                </div>
+            )}
         </div>
     );
 }

@@ -21,50 +21,80 @@ app.on("ready", () => {
   ipcMainHandle("getStaticData", () => {
     return getStaticData()
   });
-  autoUpdater.logger = console;
-  autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
+  // Only run auto-updater in production builds
+  if (!isDev()) {
+    autoUpdater.logger = console;
+    autoUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = true;
 
-  autoUpdater.on("checking-for-update", () => {
-    console.log("checking-for-update");
-    mainWindow.webContents.send("checking-for-update");
-  });
+    // Log current app version for debugging
+    console.log("Current app version:", app.getVersion());
+    console.log("Auto-updater initialized for production build");
 
-  autoUpdater.on("update-available", (info) => {
-    console.log("update-available", info);
-    mainWindow.webContents.send("update-available");
-    // We keep manual download trigger from UI instead of auto-downloading here
-  });
+    autoUpdater.on("checking-for-update", () => {
+      console.log("checking-for-update");
+      mainWindow.webContents.send("checking-for-update");
+    });
 
-  autoUpdater.on("update-not-available", (info) => {
-    console.log("update-not-available", info);
-    mainWindow.webContents.send("update-not-available");
-  });
+    autoUpdater.on("update-available", (info) => {
+      console.log("update-available", info);
+      mainWindow.webContents.send("update-available", info);
+    });
 
-  autoUpdater.on("error", (err) => {
-    console.error("auto-updater-error", err);
-    mainWindow.webContents.send("update-error", err.toString());
-  });
+    autoUpdater.on("update-not-available", (info) => {
+      console.log("update-not-available", info);
+      mainWindow.webContents.send("update-not-available");
+    });
 
-  autoUpdater.on("update-downloaded", (info) => {
-    console.log("update-downloaded", info);
-    mainWindow.webContents.send("update-downloaded");
-  });
+    autoUpdater.on("error", (err) => {
+      console.error("Auto-updater error:", err);
+      console.error("Error message:", err.message);
+      console.error("Error stack:", err.stack);
+      mainWindow.webContents.send("update-error", err.message || err.toString());
+    });
 
-  autoUpdater.on("download-progress", (progress) => {
-    console.log(`Download speed: ${progress.bytesPerSecond} - Downloaded ${progress.percent}% (${progress.transferred}/${progress.total})`);
-    mainWindow.webContents.send("download-progress", progress);
-  });
+    autoUpdater.on("update-downloaded", (info) => {
+      console.log("update-downloaded", info);
+      mainWindow.webContents.send("update-downloaded");
+    });
 
-  autoUpdater.checkForUpdates();
+    autoUpdater.on("download-progress", (progress) => {
+      console.log(`Download speed: ${progress.bytesPerSecond} - Downloaded ${progress.percent}% (${progress.transferred}/${progress.total})`);
+      mainWindow.webContents.send("download-progress", progress);
+    });
 
+    // Check for updates after a short delay to ensure window is ready
+    setTimeout(() => {
+      console.log("Checking for updates...");
+      autoUpdater.checkForUpdates().catch((err) => {
+        console.error("Failed to check for updates:", err);
+        mainWindow.webContents.send("update-error", `Failed to check for updates: ${err.message}`);
+      });
+    }, 3000);
+  } else {
+    console.log("Auto-updater disabled in development mode");
+    // Send a message to UI indicating dev mode
+    setTimeout(() => {
+      mainWindow.webContents.send("update-not-available");
+    }, 1000);
+  }
 
   ipcMainHandle("startDownload", () => {
     console.log("Starting download...");
-    autoUpdater.downloadUpdate();
+    if (!isDev()) {
+      autoUpdater.downloadUpdate().catch((err) => {
+        console.error("Failed to download update:", err);
+        mainWindow.webContents.send("update-error", `Failed to download: ${err.message}`);
+      });
+    }
+    return undefined;
   });
+
   ipcMainHandle("installUpdate", () => {
     console.log("Installing update...");
-    autoUpdater.quitAndInstall();
+    if (!isDev()) {
+      autoUpdater.quitAndInstall();
+    }
+    return undefined;
   });
 });
