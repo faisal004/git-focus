@@ -32,6 +32,14 @@ export function useCommitData() {
 
     useEffect(() => {
         fetchData();
+
+        const unsubCompleted = window.electron.onPomodoroCompleted(() => {
+            fetchData();
+        });
+
+        return () => {
+            unsubCompleted();
+        };
     }, [fetchData]);
 
     return { commits, streak, loading, refresh: fetchData };
