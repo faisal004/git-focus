@@ -18,12 +18,14 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.7.3",
     "os-utils": "^0.0.14",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "recharts": "^3.7.0"
+    "recharts": "^3.7.0",
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

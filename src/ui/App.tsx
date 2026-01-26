@@ -36,7 +36,7 @@ function App() {
   return (
     <div className="App">
       <UpdateNotification />
-      <div className="main">
+      <div className="main bg-red-500">
         <div style={{ textAlign: 'center', margin: '20px', fontSize: '1.2em', fontWeight: 'bold' }}>
           System Monitor v0.0.23
         </div>
