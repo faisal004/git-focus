@@ -37,7 +37,7 @@ export function BlockRuleManager() {
     }
 
     return (
-        <Card className="border-2 border-primary shadow-none">
+        <Card className="border-2 border-primary shadow-none h-full">
             <CardHeader className="border-b-2 border-primary pb-4 bg-muted/20">
                 <CardTitle className="flex items-center gap-2 uppercase tracking-wide">
                     {">"} BLOCKED_PROTOCOLS

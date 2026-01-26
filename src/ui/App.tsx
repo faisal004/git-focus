@@ -17,10 +17,17 @@ function App() {
       <UpdateNotification />
 
       <main className="flex-1 overflow-auto p-4">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <PomodoroTimer />
-          <CommitHeatmap />
-          <BlockRuleManager />
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1 h-full">
+            <PomodoroTimer />
+          </div>
+          <div className="md:col-span-2 h-full">
+            <BlockRuleManager />
+          </div>
+
+          <div className="md:col-span-3">
+            <CommitHeatmap />
+          </div>
         </div>
       </main>
     </div>

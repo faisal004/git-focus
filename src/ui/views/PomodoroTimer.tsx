@@ -54,7 +54,7 @@ export function PomodoroTimer() {
         : 0;
 
     return (
-        <Card className="w-full max-w-md mx-auto border-4 border-primary shadow-none">
+        <Card className="w-full h-full border-4 border-primary shadow-none flex flex-col">
             <CardHeader className="text-center border-b-2 border-primary bg-muted/20 pb-4">
                 <CardTitle className="text-2xl uppercase font-extrabold tracking-widest leading-none">
                     // TIMER_MODULE
