@@ -80,7 +80,7 @@ app.on("ready", () => {
   } else {
     mainWindow.loadFile(getUIPath());
   }
-  pollResources(mainWindow);
+  // pollResources(mainWindow); // Disabled as we are focusing on Pomodoro features only
 
   // Initialize database and repositories
   const db = initDatabase();
