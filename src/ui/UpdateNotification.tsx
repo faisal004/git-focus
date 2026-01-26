@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './components/card';
+import { Button } from './components/button';
+import { cn } from './lib/utils';
 
 export function UpdateNotification() {
-    const [showNotification, setShowNotification] = useState(false);
     const [statusMsg, setStatusMsg] = useState('');
     const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
     const [updateReady, setUpdateReady] = useState(false);
@@ -14,14 +16,12 @@ export function UpdateNotification() {
         const unsubChecking = window.electron.onCheckingForUpdate(() => {
             console.log("UpdateNotification: Received checking-for-update");
             setStatusMsg("Checking for updates...");
-            setShowNotification(true);
             setHasError(false);
         });
 
         const unsubAvailable = window.electron.onUpdateAvailable(() => {
             console.log("UpdateNotification: Received update-available");
             setStatusMsg("Update available!");
-            setShowNotification(true);
             setUpdateAvailable(true);
             setHasError(false);
         });
@@ -29,7 +29,6 @@ export function UpdateNotification() {
         const unsubNotAvailable = window.electron.onUpdateNotAvailable(() => {
             console.log("UpdateNotification: Received update-not-available");
             setStatusMsg("You're on the latest version.");
-            setShowNotification(true);
             setUpdateAvailable(false);
         });
 
@@ -38,7 +37,6 @@ export function UpdateNotification() {
             const msg = `Downloading: ${progress.percent.toFixed(1)}% (${(progress.transferred / 1024 / 1024).toFixed(1)}MB / ${(progress.total / 1024 / 1024).toFixed(1)}MB)`;
             setStatusMsg(msg);
             setDownloadProgress(progress.percent);
-            setShowNotification(true);
         });
 
         const unsubDownloaded = window.electron.onUpdateDownloaded(() => {
@@ -47,13 +45,11 @@ export function UpdateNotification() {
             setDownloadProgress(null);
             setUpdateReady(true);
             setUpdateAvailable(false);
-            setShowNotification(true);
         });
 
         const unsubError = window.electron.onUpdateError((err) => {
             console.log("UpdateNotification: Received update-error", err);
             setStatusMsg(`Error: ${err}`);
-            setShowNotification(true);
             setHasError(true);
             setUpdateAvailable(false);
         });
@@ -79,73 +75,73 @@ export function UpdateNotification() {
     const handleCheckForUpdates = () => {
         console.log("Manual check for updates button clicked");
         setStatusMsg("Checking for updates...");
-        setShowNotification(true);
         setHasError(false);
         window.electron.checkForUpdates();
     };
 
     return (
-        <div style={{
-            margin: '20px',
-            backgroundColor: '#333',
-            color: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '15px',
-            maxWidth: '600px',
-            alignSelf: 'center'
-        }}>
-            <div style={{ fontWeight: 'bold', fontSize: '14px', wordBreak: 'break-word' }}>
-                {statusMsg || "Ready to check for updates..."}
-            </div>
+        <Card className="max-w-xl">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    Updates
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {/* Status Message */}
+                <p className={cn(
+                    "text-sm break-words",
+                    hasError ? "text-destructive" : "text-muted-foreground"
+                )}>
+                    {statusMsg || "Ready to check for updates..."}
+                </p>
 
-            {downloadProgress !== null && (
-                <div style={{ width: '100%', backgroundColor: '#555', borderRadius: '4px', height: '8px' }}>
-                    <div style={{
-                        width: `${downloadProgress}%`,
-                        backgroundColor: '#007bff',
-                        height: '100%',
-                        borderRadius: '4px',
-                        transition: 'width 0.2s'
-                    }} />
-                </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                <button onClick={handleCheckForUpdates} style={buttonStyle}>
-                    Check for Updates
-                </button>
-
-                {updateAvailable && (
-                    <button onClick={handleDownload} style={buttonStyle}>
-                        Download
-                    </button>
+                {/* Progress Bar */}
+                {downloadProgress !== null && (
+                    <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                        <div
+                            className="bg-primary h-full transition-all duration-200 rounded-full"
+                            style={{ width: `${downloadProgress}%` }}
+                        />
+                    </div>
                 )}
 
-                {updateReady && (
-                    <button onClick={handleInstall} style={buttonStyle}>
-                        Install & Restart
-                    </button>
-                )}
-            </div>
+                {/* Action Buttons */}
+                <div className="flex gap-2 flex-wrap">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCheckForUpdates}
+                    >
+                        Check for Updates
+                    </Button>
 
-            {hasError && (
-                <div style={{ fontSize: '12px', color: '#ff6b6b', marginTop: '5px' }}>
-                    If you installed an older version (v0.0.5 or earlier), please manually download the latest version from GitHub.
+                    {updateAvailable && (
+                        <Button
+                            size="sm"
+                            onClick={handleDownload}
+                        >
+                            Download
+                        </Button>
+                    )}
+
+                    {updateReady && (
+                        <Button
+                            size="sm"
+                            onClick={handleInstall}
+                        >
+                            Install & Restart
+                        </Button>
+                    )}
                 </div>
-            )}
-        </div>
+
+                {/* Error Help Text */}
+                {hasError && (
+                    <p className="text-xs text-destructive/80">
+                        If you installed an older version (v0.0.5 or earlier), please manually download the latest version from GitHub.
+                    </p>
+                )}
+            </CardContent>
+        </Card>
     );
 }
-
-const buttonStyle = {
-    padding: '8px 12px',
-    border: 'none',
-    borderRadius: '4px',
-    backgroundColor: '#007bff',
-    color: 'white',
-    cursor: 'pointer',
-};
