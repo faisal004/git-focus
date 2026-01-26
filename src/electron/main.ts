@@ -59,10 +59,10 @@ app.on("ready", () => {
       autoUpdater.allowDowngrade = false;
 
       // CRITICAL: Force update checks even when app.isPackaged is false
-      // This is needed for NSIS builds that may report isPackaged incorrectly
+      // dev-app-update.yml is included in ASAR via electron-builder files array
       autoUpdater.forceDevUpdateConfig = true;
 
-      // Force set the GitHub provider explicitly
+      // Set the GitHub provider explicitly as backup
       autoUpdater.setFeedURL({
         provider: "github",
         owner: "faisal004",
