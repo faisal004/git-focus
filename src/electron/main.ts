@@ -214,6 +214,10 @@ app.on("ready", () => {
     return sessionRepo.findRecent(args.limit, args.offset);
   });
 
+  ipcMainHandleWithArgs<{ startTime: number; endTime: number }, PomodoroSession[]>("data:getSessionsByDateRange", (args) => {
+    return sessionRepo.findByDateRange(args.startTime, args.endTime);
+  });
+
   // === SETTINGS IPC HANDLERS ===
   ipcMainHandle("settings:get", () => {
     return settingsRepo.get();

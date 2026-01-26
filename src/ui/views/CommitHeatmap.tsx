@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useCommitData } from '../hooks/useCommitData';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/card';
+import { SessionDetailsDialog } from '../components/SessionDetailsDialog';
 
 type HeatmapDay = {
     date: string;
@@ -26,6 +27,8 @@ const LEVEL_COLORS = [
 
 export function CommitHeatmap() {
     const { commits, streak, loading } = useCommitData();
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const heatmapData = useMemo(() => {
         // Generate last 365 days
@@ -90,8 +93,12 @@ export function CommitHeatmap() {
                                 {week.map((day) => (
                                     <div
                                         key={day.date}
-                                        className={`w-3 h-3 ${LEVEL_COLORS[day.level]} hover:border hover:border-foreground/50 transition-colors`}
+                                        className={`w-3 h-3 ${LEVEL_COLORS[day.level]} hover:border hover:border-foreground/50 transition-colors cursor-pointer`}
                                         title={`${day.date}: ${day.count} SESSIONS`}
+                                        onClick={() => {
+                                            setSelectedDate(new Date(day.date));
+                                            setIsDialogOpen(true);
+                                        }}
                                     />
                                 ))}
                             </div>
@@ -107,6 +114,12 @@ export function CommitHeatmap() {
                     ))}
                     <span>MAX_LOAD</span>
                 </div>
+
+                <SessionDetailsDialog
+                    isOpen={isDialogOpen}
+                    onOpenChange={setIsDialogOpen}
+                    date={selectedDate}
+                />
             </CardContent>
         </Card>
     );

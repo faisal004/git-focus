@@ -45,6 +45,12 @@ export function createSessionRepository(db: Database.Database) {
     LIMIT ? OFFSET ?
   `);
 
+    const findByDateRangeStmt = db.prepare(`
+    SELECT * FROM pomodoro_sessions 
+    WHERE start_time >= ? AND start_time <= ?
+    ORDER BY start_time DESC
+  `);
+
     return {
         create(durationMinutes: number): PomodoroSession {
             const session: PomodoroSession = {
@@ -82,6 +88,11 @@ export function createSessionRepository(db: Database.Database) {
 
         findRecent(limit: number, offset: number): PomodoroSession[] {
             const rows = findRecentStmt.all(limit, offset) as SessionRow[];
+            return rows.map(rowToSession);
+        },
+
+        findByDateRange(startTime: number, endTime: number): PomodoroSession[] {
+            const rows = findByDateRangeStmt.all(startTime, endTime) as SessionRow[];
             return rows.map(rowToSession);
         },
 

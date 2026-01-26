@@ -133,6 +133,7 @@ type EventPayloadMapping = {
   "data:getDailyCommits": DailyCommit[];
   "data:getStreakStats": StreakStats;
   "data:getSessionHistory": PomodoroSession[];
+  "data:getSessionsByDateRange": PomodoroSession[];
 
   // Settings channels
   "settings:get": UserSettings;
@@ -179,6 +180,7 @@ interface Window {
     getDailyCommits: (startDate: string, endDate: string) => Promise<DailyCommit[]>;
     getStreakStats: () => Promise<StreakStats>;
     getSessionHistory: (limit: number, offset: number) => Promise<PomodoroSession[]>;
+    getSessionsByDateRange: (startTime: number, endTime: number) => Promise<PomodoroSession[]>;
 
     // Settings API
     getSettings: () => Promise<UserSettings>;

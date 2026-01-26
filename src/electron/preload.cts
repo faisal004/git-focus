@@ -40,6 +40,7 @@ electron.contextBridge.exposeInMainWorld('electron', {
   getDailyCommits: (startDate: string, endDate: string) => ipcInvokeWithArgs('data:getDailyCommits', { startDate, endDate }),
   getStreakStats: () => ipcInvoke('data:getStreakStats'),
   getSessionHistory: (limit: number, offset: number) => ipcInvokeWithArgs('data:getSessionHistory', { limit, offset }),
+  getSessionsByDateRange: (startTime: number, endTime: number) => ipcInvokeWithArgs('data:getSessionsByDateRange', { startTime, endTime }),
 
   // === SETTINGS API ===
   getSettings: () => ipcInvoke('settings:get'),
