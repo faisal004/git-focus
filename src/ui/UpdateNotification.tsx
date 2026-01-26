@@ -19,11 +19,11 @@ export function UpdateNotification() {
         });
 
         const unsubNotAvailable = window.electron.onUpdateNotAvailable(() => {
-            toast.success("You are up to date!");
+            //toast.success("You are up to date!");
         });
 
         const unsubProgress = window.electron.onDownloadProgress(() => {
-            toast.info("Downloading update...");
+            //toast.info("Downloading update...");
         });
 
         const unsubDownloaded = window.electron.onUpdateDownloaded(() => {
