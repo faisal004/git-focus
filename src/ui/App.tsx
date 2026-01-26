@@ -2,6 +2,7 @@ import { UpdateNotification } from './UpdateNotification';
 import { PomodoroTimer } from './views/PomodoroTimer';
 import { CommitHeatmap } from './views/CommitHeatmap';
 import { BlockRuleManager } from './views/BlockRuleManager';
+import { SettingsView } from './views/SettingsView';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
             {">"}_ IRON_FOCUS
           </h1>
         </div>
+        <SettingsView />
       </header>
 
       <UpdateNotification />
