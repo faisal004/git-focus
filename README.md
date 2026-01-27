@@ -41,4 +41,8 @@ IronFocus is built for transparency and reliability.
 
 ## 🤝 Contributing
 
+
+https://github.com/user-attachments/assets/9233b7f7-89ac-43f0-bf04-3101221454ba
+
+
 Contributions are welcome! Please feel free to submit a Pull Request.
