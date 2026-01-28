@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { usePomodoroState, usePomodoroEvents } from '../hooks/usePomodoroState';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/card';
 import { Button } from '../components/button';
+import { soundManager } from '../utils/SoundManager';
 
 function formatTime(seconds: number): string {
     const mins = Math.floor(seconds / 60);
@@ -17,10 +18,12 @@ export function PomodoroTimer() {
 
     usePomodoroEvents({
         onCompleted: () => {
+            soundManager.playBeep('success');
             setShowCompletedMessage(true);
             setTimeout(() => setShowCompletedMessage(false), 5000);
         },
         onFailed: (_session, reason) => {
+            soundManager.playBeep('fail');
             setShowFailedMessage(reason);
             setTimeout(() => setShowFailedMessage(null), 5000);
         },
@@ -28,6 +31,7 @@ export function PomodoroTimer() {
 
     const handleStart = useCallback(async () => {
         setIsStarting(true);
+        soundManager.playBeep('start');
         try {
             await window.electron.startPomodoro();
         } finally {
