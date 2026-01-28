@@ -142,8 +142,18 @@ export class BlockingService {
                 // For "youtube.com", checking if title contains "youtube" is a reasonable heuristic
                 // Use a simplified pattern if it looks like a domain
                 const simplePattern = pattern.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0].split(".")[0];
-                const titleMatch = window.windowTitle.toLowerCase().includes(simplePattern) ||
-                    window.windowTitle.toLowerCase().includes(pattern);
+
+                // CRITICAL FIX: If the pattern is too short (e.g. "x" from "x.com"), do NOT use it for
+                // broad title matching as it causes false positives (e.g. matching "jsx", "box", etc.)
+                let titleMatch = false;
+                if (simplePattern.length >= 4) {
+                    titleMatch = window.windowTitle.toLowerCase().includes(simplePattern) ||
+                        window.windowTitle.toLowerCase().includes(pattern);
+                } else {
+                    // For short patterns, only match the FULL pattern found in the title
+                    // e.g. "x.com" must appear in title, "x" is NOT enough.
+                    titleMatch = window.windowTitle.toLowerCase().includes(pattern);
+                }
 
                 logger.info(`Checking domain rule '${pattern}' against title '${window.windowTitle}': ${titleMatch}`);
                 return titleMatch;
