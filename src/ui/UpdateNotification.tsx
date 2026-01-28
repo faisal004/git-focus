@@ -9,7 +9,7 @@ export function UpdateNotification() {
 
         const unsubAvailable = window.electron.onUpdateAvailable(() => {
             toast.info("Update available!", {
-                description: "A new version of IronFocus is available.",
+                description: "A new version of GitFocus is available.",
                 action: {
                     label: "Download",
                     onClick: () => window.electron.startDownload(),

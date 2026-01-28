@@ -1,8 +1,8 @@
 {
-  "name": "iron-focus",
+  "name": "git-focus",
   "private": true,
-  "description": "IronFocus - Brutally simple productivity and distraction blocking",
-  "version": "0.0.34",
+  "description": "GitFocus - Brutally simple productivity and distraction blocking",
+  "version": "0.0.35",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {

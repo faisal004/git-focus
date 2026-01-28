@@ -20,7 +20,7 @@ let isQuitting = false;
 function createTray(mainWindow: BrowserWindow) {
   const icon = nativeImage.createFromPath(path.join(getAssetPath(), "tray-icon.png"));
   tray = new Tray(icon);
-  tray.setToolTip("IronFocus");
+  tray.setToolTip("GitFocus");
 
   const contextMenu = Menu.buildFromTemplate([
     { label: "Show", click: () => mainWindow.show() },
@@ -141,7 +141,7 @@ app.on("ready", () => {
         if (Notification.isSupported()) {
           new Notification({
             title: "🚫 Session Failed",
-            body: `IronFocus: Session failed due to ${event.targetName}.`,
+            body: `GitFocus: Session failed due to ${event.targetName}.`,
             silent: false,
             // icon: path.join(getAssetPath(), "tray-icon.png") 
           }).show();

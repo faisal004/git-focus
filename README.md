@@ -1,8 +1,8 @@
-# IronFocus 🛡️
+# GitFocus 🛡️
 
 **Brutally simple productivity and distraction blocking.**
 
-IronFocus is a desktop application designed to help you enter and maintain a flow state. It combines a Pomodoro timer with a ruthless distraction blocker and a visual activity log to keep you accountable.
+GitFocus is a desktop application designed to help you enter and maintain a flow state. It combines a Pomodoro timer with a ruthless distraction blocker and a visual activity log to keep you accountable.
 
 
 
