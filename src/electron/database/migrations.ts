@@ -82,6 +82,23 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_subtasks_task_id ON kanban_subtasks(task_id);
     `,
   },
+  {
+    version: 4,
+    sql: `
+      ALTER TABLE kanban_tasks ADD COLUMN youtube_link TEXT;
+
+      CREATE TABLE IF NOT EXISTS kanban_activity_log (
+        id TEXT PRIMARY KEY,
+        task_id TEXT NOT NULL,
+        task_title TEXT NOT NULL,
+        action TEXT NOT NULL,
+        details TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON kanban_activity_log(created_at);
+    `,
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

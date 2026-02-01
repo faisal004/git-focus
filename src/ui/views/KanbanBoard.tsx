@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Calendar, CheckSquare, Square, X } from "lucide-react";
+import { Plus, Trash2, Calendar, CheckSquare, Square, X, History, Link as LinkIcon, ExternalLink } from "lucide-react";
 
 // Types are globally available via types.d.ts
 
@@ -7,13 +7,12 @@ export function KanbanBoard() {
     const [tasks, setTasks] = useState<KanbanTask[]>([]);
     const [loading, setLoading] = useState(true);
     const [newTaskTitle, setNewTaskTitle] = useState("");
+    const [newTaskLink, setNewTaskLink] = useState("");
     const [isAdding, setIsAdding] = useState(false);
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
-    // Subtask state for the currently expanded task (simple accordion style or just always show)
-    // For simplicity, let's always show subtasks or use a local state map if needed.
-    // Actually, expanding might be better for UI cleanliness.
-    const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+    const [logs, setLogs] = useState<KanbanActivityLog[]>([]);
+    const [showLogs, setShowLogs] = useState(false);
     const [newSubtaskTitles, setNewSubtaskTitles] = useState<Record<string, string>>({});
 
     useEffect(() => {
@@ -31,6 +30,23 @@ export function KanbanBoard() {
         }
     };
 
+    const loadLogs = async () => {
+        try {
+            const activityLogs = await window.electron.getKanbanActivityLog();
+            setLogs(activityLogs);
+        } catch (error) {
+            console.error("Failed to load logs:", error);
+        }
+    };
+
+    // Toggle logs and refresh when opening
+    const toggleLogs = () => {
+        if (!showLogs) {
+            loadLogs();
+        }
+        setShowLogs(!showLogs);
+    };
+
     const handleCreateTask = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTaskTitle.trim()) return;
@@ -40,11 +56,13 @@ export function KanbanBoard() {
                 title: newTaskTitle,
                 description: "",
                 status: "todo",
+                youtubeLink: newTaskLink.trim() || undefined,
             });
             // Ensure subtasks is initialized
             const taskWithSubtasks = { ...newTask, subtasks: [] };
             setTasks([taskWithSubtasks, ...tasks]);
             setNewTaskTitle("");
+            setNewTaskLink("");
             setIsAdding(false);
         } catch (error) {
             console.error("Failed to create task:", error);
@@ -68,7 +86,6 @@ export function KanbanBoard() {
     const handleDragStart = (e: React.DragEvent, taskId: string) => {
         setDraggedTaskId(taskId);
         e.dataTransfer.effectAllowed = "move";
-        // e.dataTransfer.setData("text/plain", taskId); // Not strictly needed if we use state
     };
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -171,6 +188,14 @@ export function KanbanBoard() {
         }
     };
 
+    // === Helpers ===
+    const getYoutubeId = (url: string | undefined) => {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
     const columns: { id: KanbanStatus; title: string }[] = [
         { id: "todo", title: "To Do" },
         { id: "in-progress", title: "In Progress" },
@@ -182,46 +207,101 @@ export function KanbanBoard() {
     }
 
     return (
-        <div className="h-full flex flex-col gap-6">
+        <div className="h-full flex flex-col gap-6 relative">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Weekly Planner</h2>
                     <p className="text-muted-foreground">Plan your week. Drag and drop to track progress.</p>
                 </div>
-                <button
-                    onClick={() => setIsAdding(!isAdding)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                >
-                    <Plus size={16} />
-                    New Task
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={toggleLogs}
+                        className="flex items-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
+                        title="View Activity Log"
+                    >
+                        <History size={16} />
+                        History
+                    </button>
+                    <button
+                        onClick={() => setIsAdding(!isAdding)}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    >
+                        <Plus size={16} />
+                        New Task
+                    </button>
+                </div>
             </div>
+
+            {/* Activity Log Overlay */}
+            {showLogs && (
+                <div className="absolute right-0 top-16 z-50 w-80 max-h-[calc(100vh-12rem)] bg-card border shadow-lg rounded-lg flex flex-col animate-in slide-in-from-right-5 fade-in duration-200">
+                    <div className="p-3 border-b flex items-center justify-between bg-muted/30">
+                        <h3 className="font-semibold text-sm">Activity Log</h3>
+                        <button onClick={() => setShowLogs(false)} className="text-muted-foreground hover:text-foreground">
+                            <X size={14} />
+                        </button>
+                    </div>
+                    <div className="overflow-y-auto p-3 space-y-3 flex-1">
+                        {logs.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-4">No recent activity.</p>
+                        ) : (
+                            logs.map(log => (
+                                <div key={log.id} className="text-xs border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                                    <div className="flex justify-between items-start mb-1">
+                                        <span className="font-medium truncate max-w-[150px]">{log.taskTitle}</span>
+                                        <span className="text-muted-foreground text-[10px]">
+                                            {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                    <p className="text-muted-foreground">{log.details}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                    <div className="p-2 border-t bg-muted/20 text-center">
+                        <button onClick={loadLogs} className="text-xs text-primary hover:underline">Refresh</button>
+                    </div>
+                </div>
+            )}
 
             {isAdding && (
                 <form onSubmit={handleCreateTask} className="bg-card border rounded-lg p-4 animate-in slide-in-from-top-2">
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-3">
                         <input
                             type="text"
                             value={newTaskTitle}
                             onChange={(e) => setNewTaskTitle(e.target.value)}
                             placeholder="What do you want to achieve this week?"
-                            className="flex-1 bg-background border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-primary/50"
+                            className="bg-background border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-primary/50"
                             autoFocus
                         />
-                        <button
-                            type="submit"
-                            disabled={!newTaskTitle.trim()}
-                            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
-                        >
-                            Add
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsAdding(false)}
-                            className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
-                        >
-                            Cancel
-                        </button>
+                        <div className="flex gap-2">
+                            <div className="flex-1 relative">
+                                <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    value={newTaskLink}
+                                    onChange={(e) => setNewTaskLink(e.target.value)}
+                                    placeholder="Optional: Paste YouTube link here..."
+                                    className="w-full bg-background border rounded-md pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!newTaskTitle.trim()}
+                                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
+                            >
+                                Add
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsAdding(false)}
+                                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </form>
             )}
@@ -254,7 +334,7 @@ export function KanbanBoard() {
                                             }`}
                                     >
                                         <div className="flex items-start justify-between gap-2 mb-2">
-                                            <p className="font-medium text-sm leading-tight">{task.title}</p>
+                                            <p className="font-medium text-sm leading-tight text-balance">{task.title}</p>
                                             <button
                                                 onClick={(e) => handleDeleteTask(task.id, e)}
                                                 className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
@@ -264,11 +344,35 @@ export function KanbanBoard() {
                                             </button>
                                         </div>
 
+                                        {/* YouTube Embed */}
+                                        {task.youtubeLink && getYoutubeId(task.youtubeLink) && (
+                                            <div className="mb-3 rounded-md overflow-hidden bg-black/5 aspect-video relative group/video">
+                                                <iframe
+                                                    width="100%"
+                                                    height="100%"
+                                                    src={`https://www.youtube.com/embed/${getYoutubeId(task.youtubeLink)}`}
+                                                    title="YouTube video player"
+                                                    frameBorder="0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                    allowFullScreen
+                                                    className="absolute inset-0"
+                                                ></iframe>
+                                            </div>
+                                        )}
+                                        {task.youtubeLink && !getYoutubeId(task.youtubeLink) && (
+                                            <div className="mb-2 text-xs truncate text-blue-500 hover:underline">
+                                                <a href={task.youtubeLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                                    <ExternalLink size={10} />
+                                                    {task.youtubeLink}
+                                                </a>
+                                            </div>
+                                        )}
+
                                         {/* Subtasks Section */}
-                                        <div className="mt-3 space-y-2">
+                                        <div className="mt-2 space-y-2">
                                             {/* Progress Bar */}
                                             {task.subtasks && task.subtasks.length > 0 && (
-                                                <div className="w-full bg-muted rounded-full h-1.5 mb-2">
+                                                <div className="w-full bg-muted rounded-full h-1.5 mb-1">
                                                     <div
                                                         className="bg-primary h-1.5 rounded-full transition-all duration-300"
                                                         style={{
@@ -287,7 +391,7 @@ export function KanbanBoard() {
                                                     >
                                                         {subtask.completed ? <CheckSquare size={12} /> : <Square size={12} />}
                                                     </button>
-                                                    <span className={`flex-1 ${subtask.completed ? "line-through text-muted-foreground/50" : "text-muted-foreground"}`}>
+                                                    <span className={`flex-1 truncate ${subtask.completed ? "line-through text-muted-foreground/50" : "text-muted-foreground"}`}>
                                                         {subtask.title}
                                                     </span>
                                                     <button
