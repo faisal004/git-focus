@@ -246,9 +246,11 @@ export function createKanbanRepository(db: Database.Database) {
 
         deleteSubtask(id: string): void {
             deleteSubtask.run(id);
-            // Similar to toggle, skipping detailed log for subtask deletion for now unless requested detail.
-            // Actually user said "what task added deleted moved any thing", maybe subtask delete counts.
-            // I'll leave it simple for now.
+        },
+
+        updateSubtaskTitle(id: string, title: string): void {
+            const stmt = db.prepare(`UPDATE kanban_subtasks SET title = ? WHERE id = ?`);
+            stmt.run(title, id);
         },
 
         getActivityLog(): KanbanActivityLog[] {

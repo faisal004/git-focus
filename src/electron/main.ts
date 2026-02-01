@@ -279,6 +279,11 @@ app.on("ready", () => {
     return undefined;
   });
 
+  ipcMainHandleWithArgs<{ id: string; title: string }, void>("kanban:updateSubtaskTitle", (args) => {
+    kanbanRepo.updateSubtaskTitle(args.id, args.title);
+    return undefined;
+  });
+
   ipcMainHandleWithArgs<string, void>("kanban:deleteSubtask", (id) => {
     kanbanRepo.deleteSubtask(id);
     return undefined;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Calendar, CheckSquare, Square, X, History, Link as LinkIcon, ExternalLink, ChevronRight, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Calendar, CheckSquare, Square, X, History, Link as LinkIcon, ExternalLink, ChevronRight, ChevronDown, Pencil } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "../components/sheet";
 import { ScrollArea } from "../components/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "../components/dialog";
@@ -16,6 +16,12 @@ export function KanbanBoard() {
     const [isAdding, setIsAdding] = useState(false);
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+
+    // Edit State
+    const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
+    const [editTitle, setEditTitle] = useState("");
+    const [editLink, setEditLink] = useState("");
+    const [editSubtasks, setEditSubtasks] = useState<{ id: string, title: string }[]>([]);
 
     const [logs, setLogs] = useState<KanbanActivityLog[]>([]);
     const [newSubtaskTitles, setNewSubtaskTitles] = useState<Record<string, string>>({});
@@ -81,6 +87,60 @@ export function KanbanBoard() {
             loadTasks();
         } finally {
             setTaskToDelete(null);
+        }
+    };
+
+    const handleEditClick = (task: KanbanTask, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditingTask(task);
+        setEditTitle(task.title);
+        setEditLink(task.youtubeLink || "");
+        setEditSubtasks(task.subtasks.map(s => ({ id: s.id, title: s.title })));
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingTask) return;
+
+        try {
+            // Update Main Task
+            const updatedTask = {
+                ...editingTask,
+                title: editTitle,
+                youtubeLink: editLink.trim() || undefined
+            };
+
+            await window.electron.updateKanbanTask(updatedTask);
+
+            // Update Changed Subtasks
+            const originalSubtasks = editingTask.subtasks;
+            for (const sub of editSubtasks) {
+                const original = originalSubtasks.find(os => os.id === sub.id);
+                if (original && original.title !== sub.title && sub.title.trim()) {
+                    await window.electron.updateKanbanSubtaskTitle(sub.id, sub.title);
+                }
+            }
+
+            // Reload tasks to be safe and clean, or update optimistically
+            // For now, let's just reload to ensure consistency with DB state
+            // But to make it snappy, we can do local update too
+
+            setTasks(prev => prev.map(t => {
+                if (t.id === editingTask.id) {
+                    return {
+                        ...updatedTask,
+                        subtasks: t.subtasks.map(s => {
+                            const edited = editSubtasks.find(es => es.id === s.id);
+                            return edited ? { ...s, title: edited.title } : s;
+                        })
+                    };
+                }
+                return t;
+            }));
+
+            setEditingTask(null);
+        } catch (error) {
+            console.error("Failed to update task:", error);
+            loadTasks(); // Fallback
         }
     };
 
@@ -358,6 +418,65 @@ export function KanbanBoard() {
                 </DialogContent>
             </Dialog>
 
+            {/* Edit Task Dialog */}
+            <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+                <DialogContent className="max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Edit Task</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Task Title</label>
+                            <input
+                                type="text"
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                className="w-full bg-background border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-primary/50"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">YouTube Link</label>
+                            <div className="relative">
+                                <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    value={editLink}
+                                    onChange={(e) => setEditLink(e.target.value)}
+                                    className="w-full bg-background border rounded-md pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                            </div>
+                        </div>
+
+                        {editSubtasks.length > 0 && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Subtasks</label>
+                                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                                    {editSubtasks.map((sub, index) => (
+                                        <div key={sub.id} className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={sub.title}
+                                                onChange={(e) => {
+                                                    const newSubtasks = [...editSubtasks];
+                                                    newSubtasks[index].title = e.target.value;
+                                                    setEditSubtasks(newSubtasks);
+                                                }}
+                                                className="flex-1 bg-muted/30 border-b border-transparent focus:border-primary/50 px-2 py-1 text-sm outline-none"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEditingTask(null)}>Cancel</Button>
+                        <Button onClick={handleSaveEdit} disabled={!editTitle.trim()}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Delete Confirmation Alert Dialog */}
             <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
                 <AlertDialogContent>
@@ -405,13 +524,22 @@ export function KanbanBoard() {
                                     >
                                         <div className="flex items-start justify-between gap-2 mb-2">
                                             <p className="font-medium text-sm leading-tight text-balance">{task.title}</p>
-                                            <button
-                                                onClick={(e) => handleDeleteClick(task.id, e)}
-                                                className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                                title="Delete task"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={(e) => handleEditClick(task, e)}
+                                                    className="text-muted-foreground hover:text-primary transition-colors p-1"
+                                                    title="Edit task"
+                                                >
+                                                    <Pencil size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDeleteClick(task.id, e)}
+                                                    className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                                                    title="Delete task"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
                                         </div>
 
                                         {/* YouTube Embed */}

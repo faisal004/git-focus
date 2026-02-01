@@ -56,6 +56,7 @@ electron.contextBridge.exposeInMainWorld('electron', {
   // === SUBTIASK API ===
   createKanbanSubtask: (subtask: Omit<KanbanSubtask, "id" | "createdAt" | "completed">) => ipcInvokeWithArgs('kanban:createSubtask', subtask),
   toggleKanbanSubtask: (id: string, completed: boolean) => ipcInvokeWithArgs('kanban:toggleSubtask', { id, completed }),
+  updateKanbanSubtaskTitle: (id: string, title: string) => ipcInvokeWithArgs('kanban:updateSubtaskTitle', { id, title }),
   deleteKanbanSubtask: (id: string) => ipcInvokeWithArgs('kanban:deleteSubtask', id),
   getKanbanActivityLog: () => ipcInvoke('kanban:getActivityLog'),
 } satisfies Window['electron']);

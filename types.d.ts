@@ -195,6 +195,7 @@ type EventPayloadMapping = {
   // Subtask channels
   "kanban:createSubtask": KanbanSubtask;
   "kanban:toggleSubtask": void;
+  "kanban:updateSubtaskTitle": void;
   "kanban:deleteSubtask": void;
   "kanban:getActivityLog": KanbanActivityLog[];
 };
@@ -255,6 +256,7 @@ interface Window {
     // Subtask API
     createKanbanSubtask: (subtask: Omit<KanbanSubtask, "id" | "createdAt" | "completed">) => Promise<KanbanSubtask>;
     toggleKanbanSubtask: (id: string, completed: boolean) => Promise<void>;
+    updateKanbanSubtaskTitle: (id: string, title: string) => Promise<void>;
     deleteKanbanSubtask: (id: string) => Promise<void>;
     getKanbanActivityLog: () => Promise<KanbanActivityLog[]>;
   };
