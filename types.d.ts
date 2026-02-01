@@ -112,6 +112,14 @@ type UserSettings = {
 
 type KanbanStatus = "todo" | "in-progress" | "done";
 
+type KanbanSubtask = {
+  id: string;
+  taskId: string;
+  title: string;
+  completed: boolean;
+  createdAt: number;
+};
+
 type KanbanTask = {
   id: string;
   title: string;
@@ -119,6 +127,7 @@ type KanbanTask = {
   status: KanbanStatus;
   dueDate?: number;
   createdAt: number;
+  subtasks: KanbanSubtask[];
 };
 
 
@@ -171,6 +180,11 @@ type EventPayloadMapping = {
   "kanban:updateTask": KanbanTask;
   "kanban:updateStatus": void;
   "kanban:deleteTask": void;
+
+  // Subtask channels
+  "kanban:createSubtask": KanbanSubtask;
+  "kanban:toggleSubtask": void;
+  "kanban:deleteSubtask": void;
 };
 
 interface Window {
@@ -225,6 +239,11 @@ interface Window {
     updateKanbanTask: (task: KanbanTask) => Promise<KanbanTask>;
     updateKanbanTaskStatus: (id: string, status: KanbanStatus) => Promise<void>;
     deleteKanbanTask: (id: string) => Promise<void>;
+
+    // Subtask API
+    createKanbanSubtask: (subtask: Omit<KanbanSubtask, "id" | "createdAt" | "completed">) => Promise<KanbanSubtask>;
+    toggleKanbanSubtask: (id: string, completed: boolean) => Promise<void>;
+    deleteKanbanSubtask: (id: string) => Promise<void>;
   };
 }
 

@@ -11,7 +11,7 @@ import { createSessionRepository } from "./database/repositories/sessionReposito
 import { createBlockRuleRepository } from "./database/repositories/blockRuleRepository.js";
 import { createCommitRepository } from "./database/repositories/commitRepository.js";
 import { createSettingsRepository } from "./database/repositories/settingsRepository.js";
-import { createKanbanRepository, KanbanTask, KanbanStatus } from "./database/repositories/kanbanRepository.js";
+import { createKanbanRepository, KanbanTask, KanbanStatus, KanbanSubtask } from "./database/repositories/kanbanRepository.js";
 import { PomodoroEngine } from "./pomodoroEngine.js";
 import { BlockingService } from "./blockingService.js";
 
@@ -267,6 +267,20 @@ app.on("ready", () => {
 
   ipcMainHandleWithArgs<string, void>("kanban:deleteTask", (id) => {
     kanbanRepo.delete(id);
+    return undefined;
+  });
+
+  ipcMainHandleWithArgs<Omit<KanbanSubtask, "id" | "createdAt" | "completed">, KanbanSubtask>("kanban:createSubtask", (subtask) => {
+    return kanbanRepo.createSubtask(subtask);
+  });
+
+  ipcMainHandleWithArgs<{ id: string; completed: boolean }, void>("kanban:toggleSubtask", (args) => {
+    kanbanRepo.toggleSubtask(args.id, args.completed);
+    return undefined;
+  });
+
+  ipcMainHandleWithArgs<string, void>("kanban:deleteSubtask", (id) => {
+    kanbanRepo.deleteSubtask(id);
     return undefined;
   });
 
