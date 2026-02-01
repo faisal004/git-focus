@@ -108,6 +108,20 @@ type UserSettings = {
   hasCompletedOnboarding: boolean;
 };
 
+// === KANBAN DOMAIN ===
+
+type KanbanStatus = "todo" | "in-progress" | "done";
+
+type KanbanTask = {
+  id: string;
+  title: string;
+  description: string;
+  status: KanbanStatus;
+  dueDate?: number;
+  createdAt: number;
+};
+
+
 // === IPC EVENT PAYLOAD MAPPING ===
 
 type EventPayloadMapping = {
@@ -150,6 +164,13 @@ type EventPayloadMapping = {
   // Settings channels
   "settings:get": UserSettings;
   "settings:update": UserSettings;
+
+  // Kanban channels
+  "kanban:createTask": KanbanTask;
+  "kanban:getTasks": KanbanTask[];
+  "kanban:updateTask": KanbanTask;
+  "kanban:updateStatus": void;
+  "kanban:deleteTask": void;
 };
 
 interface Window {
@@ -197,6 +218,13 @@ interface Window {
     // Settings API
     getSettings: () => Promise<UserSettings>;
     updateSettings: (settings: Partial<UserSettings>) => Promise<UserSettings>;
+
+    // Kanban API
+    createKanbanTask: (task: Omit<KanbanTask, "id" | "createdAt">) => Promise<KanbanTask>;
+    getKanbanTasks: () => Promise<KanbanTask[]>;
+    updateKanbanTask: (task: KanbanTask) => Promise<KanbanTask>;
+    updateKanbanTaskStatus: (id: string, status: KanbanStatus) => Promise<void>;
+    deleteKanbanTask: (id: string) => Promise<void>;
   };
 }
 
