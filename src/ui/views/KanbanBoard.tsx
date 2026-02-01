@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Plus, Trash2, Calendar, CheckSquare, Square, X, History, Link as LinkIcon, ExternalLink, ChevronRight, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "../components/sheet";
 import { ScrollArea } from "../components/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "../components/dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "../components/alert-dlalog";
+import { Button } from "../components/button";
 
 // Types are globally available via types.d.ts
 
@@ -12,6 +15,7 @@ export function KanbanBoard() {
     const [newTaskLink, setNewTaskLink] = useState("");
     const [isAdding, setIsAdding] = useState(false);
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+    const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
     const [logs, setLogs] = useState<KanbanActivityLog[]>([]);
     const [newSubtaskTitles, setNewSubtaskTitles] = useState<Record<string, string>>({});
@@ -62,15 +66,21 @@ export function KanbanBoard() {
         }
     };
 
-    const handleDeleteTask = async (id: string, e: React.MouseEvent) => {
+    const handleDeleteClick = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!confirm("Are you sure you want to delete this task?")) return;
+        setTaskToDelete(id);
+    };
+
+    const confirmDeleteTask = async () => {
+        if (!taskToDelete) return;
         try {
-            setTasks(tasks.filter((t) => t.id !== id));
-            await window.electron.deleteKanbanTask(id);
+            setTasks(tasks.filter((t) => t.id !== taskToDelete));
+            await window.electron.deleteKanbanTask(taskToDelete);
         } catch (error) {
             console.error("Failed to delete task:", error);
             loadTasks();
+        } finally {
+            setTaskToDelete(null);
         }
     };
 
@@ -207,7 +217,7 @@ export function KanbanBoard() {
         const [isOpen, setIsOpen] = useState(false);
 
         return (
-            <div className="border  bg-card/50 overflow-hidden">
+            <div className="border bg-card/50 overflow-hidden">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className="w-full flex items-center justify-between p-3 text-sm font-medium hover:bg-muted/50 transition-colors"
@@ -229,9 +239,9 @@ export function KanbanBoard() {
                                         {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold ${log.action === 'created' ? 'bg-green-500/10 text-green-500' :
-                                        log.action === 'deleted' ? 'bg-red-500/10 text-red-500' :
-                                            log.action === 'moved' ? 'bg-blue-500/10 text-blue-500' :
-                                                'bg-gray-500/10 text-gray-500'
+                                            log.action === 'deleted' ? 'bg-red-500/10 text-red-500' :
+                                                log.action === 'moved' ? 'bg-blue-500/10 text-blue-500' :
+                                                    'bg-gray-500/10 text-gray-500'
                                         }`}>
                                         {log.action.replace('_', ' ')}
                                     </span>
@@ -290,7 +300,6 @@ export function KanbanBoard() {
                                     ) : (
                                         Object.values(groupedLogs)
                                             .sort((a, b) => {
-                                                // Sort by most recent log in the group
                                                 const latestA = Math.max(...a.logs.map(l => l.createdAt));
                                                 const latestB = Math.max(...b.logs.map(l => l.createdAt));
                                                 return latestB - latestA;
@@ -305,7 +314,7 @@ export function KanbanBoard() {
                     </Sheet>
 
                     <button
-                        onClick={() => setIsAdding(!isAdding)}
+                        onClick={() => setIsAdding(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
                         <Plus size={16} />
@@ -314,46 +323,58 @@ export function KanbanBoard() {
                 </div>
             </div>
 
-            {isAdding && (
-                <form onSubmit={handleCreateTask} className="bg-card border rounded-lg p-4 animate-in slide-in-from-top-2">
-                    <div className="flex flex-col gap-3">
-                        <input
-                            type="text"
-                            value={newTaskTitle}
-                            onChange={(e) => setNewTaskTitle(e.target.value)}
-                            placeholder="What do you want to achieve this week?"
-                            className="bg-background border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-primary/50"
-                            autoFocus
-                        />
-                        <div className="flex gap-2">
-                            <div className="flex-1 relative">
+            {/* Create Task Dialog */}
+            <Dialog open={isAdding} onOpenChange={setIsAdding}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Task</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateTask} id="create-task-form" className="space-y-4">
+                        <div className="space-y-2">
+                            <input
+                                type="text"
+                                value={newTaskTitle}
+                                onChange={(e) => setNewTaskTitle(e.target.value)}
+                                placeholder="What do you want to achieve?"
+                                className="w-full bg-background border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-primary/50"
+                                autoFocus
+                            />
+                            <div className="relative">
                                 <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                                 <input
                                     type="text"
                                     value={newTaskLink}
                                     onChange={(e) => setNewTaskLink(e.target.value)}
-                                    placeholder="Optional: Paste YouTube link here..."
+                                    placeholder="Optional: Paste YouTube link..."
                                     className="w-full bg-background border rounded-md pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
                                 />
                             </div>
-                            <button
-                                type="submit"
-                                disabled={!newTaskTitle.trim()}
-                                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
-                            >
-                                Add
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setIsAdding(false)}
-                                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80"
-                            >
-                                Cancel
-                            </button>
                         </div>
-                    </div>
-                </form>
-            )}
+                    </form>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAdding(false)}>Cancel</Button>
+                        <Button type="submit" form="create-task-form" disabled={!newTaskTitle.trim()}>Add Task</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Alert Dialog */}
+            <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the task and all associated data.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteTask} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full overflow-hidden">
                 {columns.map((col) => (
@@ -385,7 +406,7 @@ export function KanbanBoard() {
                                         <div className="flex items-start justify-between gap-2 mb-2">
                                             <p className="font-medium text-sm leading-tight text-balance">{task.title}</p>
                                             <button
-                                                onClick={(e) => handleDeleteTask(task.id, e)}
+                                                onClick={(e) => handleDeleteClick(task.id, e)}
                                                 className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                                                 title="Delete task"
                                             >
