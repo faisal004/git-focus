@@ -70,7 +70,7 @@ export function CommitHeatmap() {
 
     return (
         <Card className="border-2 border-primary shadow-none rounded-none">
-            <CardHeader className="border-b-2 border-primary pb-4 bg-muted/20">
+            <CardHeader className="border-b-2 border-primary pb-4 ">
                 <CardTitle className="flex items-center gap-2 uppercase tracking-wide">
                     {">"} ACTIVITY_LOG
                 </CardTitle>
