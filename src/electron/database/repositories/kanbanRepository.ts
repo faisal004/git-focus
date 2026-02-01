@@ -15,7 +15,7 @@ export type KanbanActivityLog = {
     id: string;
     taskId: string;
     taskTitle: string;
-    action: "created" | "moved" | "deleted" | "subtask_added" | "subtask_completed" | "subtask_deleted";
+    action: "created" | "moved" | "deleted" | "subtask_added" | "subtask_completed" | "subtask_deleted" | "updated" | "subtask_updated";
     details: string;
     createdAt: number;
 };
@@ -178,6 +178,7 @@ export function createKanbanRepository(db: Database.Database) {
         },
 
         update(task: KanbanTask): KanbanTask {
+            const oldTask = findTaskStmt.get(task.id) as KanbanTaskRow;
             updateTask.run({
                 id: task.id,
                 title: task.title,
@@ -186,6 +187,16 @@ export function createKanbanRepository(db: Database.Database) {
                 due_date: task.dueDate || null,
                 youtube_link: task.youtubeLink || null,
             });
+
+            if (oldTask) {
+                if (oldTask.title !== task.title) {
+                    logActivity(task.id, task.title, "updated", `Renamed from "${oldTask.title}"`);
+                }
+                if (oldTask.youtube_link !== (task.youtubeLink || null)) {
+                    const linkAction = task.youtubeLink ? "Updated" : "Removed";
+                    logActivity(task.id, task.title, "updated", `${linkAction} YouTube link`);
+                }
+            }
             return task;
         },
 
@@ -249,8 +260,20 @@ export function createKanbanRepository(db: Database.Database) {
         },
 
         updateSubtaskTitle(id: string, title: string): void {
+            // Get old title and parent task info for logging
+            const subtaskInfo = db.prepare(`
+                SELECT s.title as oldTitle, t.id as taskId, t.title as taskTitle 
+                FROM kanban_subtasks s 
+                JOIN kanban_tasks t ON s.task_id = t.id 
+                WHERE s.id = ?
+            `).get(id) as { oldTitle: string, taskId: string, taskTitle: string } | undefined;
+
             const stmt = db.prepare(`UPDATE kanban_subtasks SET title = ? WHERE id = ?`);
             stmt.run(title, id);
+
+            if (subtaskInfo && subtaskInfo.oldTitle !== title) {
+                logActivity(subtaskInfo.taskId, subtaskInfo.taskTitle, "subtask_updated", `Renamed subtask "${subtaskInfo.oldTitle}" to "${title}"`);
+            }
         },
 
         getActivityLog(): KanbanActivityLog[] {

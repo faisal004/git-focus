@@ -125,7 +125,7 @@ type KanbanActivityLog = {
   id: string;
   taskId: string;
   taskTitle: string;
-  action: "created" | "moved" | "deleted" | "subtask_added" | "subtask_completed" | "subtask_deleted";
+  action: "created" | "moved" | "deleted" | "subtask_added" | "subtask_completed" | "subtask_deleted" | "updated" | "subtask_updated";
   details: string;
   createdAt: number;
 };
