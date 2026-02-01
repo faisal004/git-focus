@@ -78,16 +78,22 @@ export function SessionDetailsDialog({ isOpen, onOpenChange, date }: SessionDeta
                         SESSION_LOG::{formatDate(date)}
                     </DialogTitle>
                     <DialogDescription className="font-mono text-xs mt-2 border-t border-primary/20 pt-2">
-                        <div className="grid grid-cols-[1fr_auto] gap-y-1">
-                            <span className="text-muted-foreground">SESSIONS_COMPLETED::</span>
-                            <span className="text-foreground text-right">{completedSessions.length}/{sessions.length}</span>
-
-                            <span className="text-muted-foreground">TIME_COMPLETED::</span>
-                            <span className="text-green-500 font-bold text-right">{totalCompletedTimeMinutes} MIN</span>
-
-                            <span className="text-muted-foreground">TIME_DISCARDED::</span>
-                            <span className="text-destructive font-bold text-right">{totalDiscardedTimeMinutes} MIN</span>
-                        </div>
+                        <table className="w-full">
+                            <tbody>
+                                <tr className="border-b border-primary/10">
+                                    <td className="py-1 text-muted-foreground">SESSIONS_COMPLETED::</td>
+                                    <td className="py-1 text-right text-foreground">{completedSessions.length}/{sessions.length}</td>
+                                </tr>
+                                <tr className="border-b border-primary/10">
+                                    <td className="py-1 text-muted-foreground">TIME_COMPLETED::</td>
+                                    <td className="py-1 text-right text-green-500 font-bold">{totalCompletedTimeMinutes} MIN</td>
+                                </tr>
+                                <tr>
+                                    <td className="py-1 text-muted-foreground">TIME_DISCARDED::</td>
+                                    <td className="py-1 text-right text-destructive font-bold">{totalDiscardedTimeMinutes} MIN</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </DialogDescription>
                 </DialogHeader>
 
@@ -121,9 +127,7 @@ export function SessionDetailsDialog({ isOpen, onOpenChange, date }: SessionDeta
                                         <div>
                                             {session.status === 'completed' ? 'DURATION' : 'TIME_SPENT'}: {getSessionDuration(session)}
                                         </div>
-                                        {session.status === 'failed' && (
-                                            <div>VIOLATIONS: {session.ruleViolations}</div>
-                                        )}
+                                        <div>VIOLATIONS: {session.ruleViolations}</div>
                                     </div>
                                 </div>
                             ))}
