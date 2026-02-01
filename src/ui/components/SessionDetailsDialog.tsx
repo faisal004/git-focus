@@ -37,8 +37,18 @@ export function SessionDetailsDialog({ isOpen, onOpenChange, date }: SessionDeta
 
     if (!date) return null;
 
-    const totalDuration = sessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
-    const completedSessions = sessions.filter(s => s.status === "completed").length;
+    const completedSessions = sessions.filter(s => s.status === "completed");
+    const failedSessions = sessions.filter(s => s.status === "failed" || s.status === "aborted");
+
+    const totalCompletedTimeMinutes = completedSessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+
+    // Calculate actual time spent in failed sessions (endTime - startTime), converted to minutes
+    const totalDiscardedTimeMinutes = failedSessions.reduce((acc, s) => {
+        if (s.endTime && s.startTime) {
+            return acc + Math.floor((s.endTime - s.startTime) / 60000);
+        }
+        return acc;
+    }, 0);
 
     const formatDate = (date: Date) => {
         return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
@@ -48,6 +58,18 @@ export function SessionDetailsDialog({ isOpen, onOpenChange, date }: SessionDeta
         return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     };
 
+    const getSessionDuration = (session: PomodoroSession) => {
+        if (session.status === 'completed') {
+            return `${session.durationMinutes}m`;
+        }
+        // For failed/aborted, calculate actual time
+        if (session.endTime && session.startTime) {
+            const actualMinutes = Math.floor((session.endTime - session.startTime) / 60000);
+            return `${actualMinutes}m / ${session.durationMinutes}m`;
+        }
+        return `${session.durationMinutes}m`;
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md rounded-none">
@@ -55,18 +77,33 @@ export function SessionDetailsDialog({ isOpen, onOpenChange, date }: SessionDeta
                     <DialogTitle className="font-mono uppercase tracking-wider">
                         SESSION_LOG::{formatDate(date)}
                     </DialogTitle>
-                    <DialogDescription className="font-mono text-xs">
-                        TOTAL_TIME::{totalDuration}MIN | COMPLETED::{completedSessions}/{sessions.length}
+                    <DialogDescription className="font-mono text-xs mt-2 border-t border-primary/20 pt-2">
+                        <table className="w-full">
+                            <tbody>
+                                <tr className="border-b border-primary/10">
+                                    <td className="py-1 text-muted-foreground">SESSIONS_COMPLETED::</td>
+                                    <td className="py-1 text-right text-foreground">{completedSessions.length}/{sessions.length}</td>
+                                </tr>
+                                <tr className="border-b border-primary/10">
+                                    <td className="py-1 text-muted-foreground">TIME_COMPLETED::</td>
+                                    <td className="py-1 text-right text-green-500 font-bold">{totalCompletedTimeMinutes} MIN</td>
+                                </tr>
+                                <tr>
+                                    <td className="py-1 text-muted-foreground">TIME_DISCARDED::</td>
+                                    <td className="py-1 text-right text-destructive font-bold">{totalDiscardedTimeMinutes} MIN</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </DialogDescription>
                 </DialogHeader>
 
-                <ScrollArea className="h-[300px] w-full ">
+                <ScrollArea className="h-[300px] w-full  ">
                     {loading ? (
                         <div className="flex items-center justify-center h-full text-muted-foreground font-mono text-sm">
                             LOADING...
                         </div>
                     ) : sessions.length === 0 ? (
-                        <div className="flex items-center justify-center h-full text-muted-foreground font-mono text-sm">
+                        <div className="flex items-center justify-center h-[200px] text-muted-foreground font-mono text-sm">
                             NO SESSIONS RECORDED
                         </div>
                     ) : (
@@ -80,12 +117,16 @@ export function SessionDetailsDialog({ isOpen, onOpenChange, date }: SessionDeta
                                         >
                                             {session.status}
                                         </Badge>
-                                        <span className="font-mono text-xs text-muted-foreground">
-                                            {formatTime(session.startTime)}
-                                        </span>
+                                        <div className="flex flex-col items-end">
+                                            <span className="font-mono text-xs text-muted-foreground">
+                                                {formatTime(session.startTime)} - {session.endTime ? formatTime(session.endTime) : '???'}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-2 text-xs font-mono text-muted-foreground">
-                                        <div>DURATION: {session.durationMinutes}m</div>
+                                        <div>
+                                            {session.status === 'completed' ? 'DURATION' : 'TIME_SPENT'}: {getSessionDuration(session)}
+                                        </div>
                                         <div>VIOLATIONS: {session.ruleViolations}</div>
                                     </div>
                                 </div>
