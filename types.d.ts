@@ -137,8 +137,14 @@ type KanbanTask = {
   status: KanbanStatus;
   dueDate?: number;
   youtubeLink?: string;
+  estimatedTime?: number;
   createdAt: number;
   subtasks: KanbanSubtask[];
+};
+
+type TaskStatistics = {
+  totalEstimated: number;
+  remainingEstimated: number; // For todo and in-progress tasks
 };
 
 
@@ -191,6 +197,7 @@ type EventPayloadMapping = {
   "kanban:updateTask": KanbanTask;
   "kanban:updateStatus": void;
   "kanban:deleteTask": void;
+  "kanban:getTaskStatistics": TaskStatistics;
 
   // Subtask channels
   "kanban:createSubtask": KanbanSubtask;
@@ -252,6 +259,7 @@ interface Window {
     updateKanbanTask: (task: KanbanTask) => Promise<KanbanTask>;
     updateKanbanTaskStatus: (id: string, status: KanbanStatus) => Promise<void>;
     deleteKanbanTask: (id: string) => Promise<void>;
+    getKanbanTaskStatistics: () => Promise<TaskStatistics>;
 
     // Subtask API
     createKanbanSubtask: (subtask: Omit<KanbanSubtask, "id" | "createdAt" | "completed">) => Promise<KanbanSubtask>;

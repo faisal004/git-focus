@@ -293,6 +293,10 @@ app.on("ready", () => {
     return kanbanRepo.getActivityLog();
   });
 
+  ipcMainHandle("kanban:getTaskStatistics", () => {
+    return kanbanRepo.getTaskStatistics();
+  });
+
 
   // Only run auto-updater in production builds
   if (!isDev()) {

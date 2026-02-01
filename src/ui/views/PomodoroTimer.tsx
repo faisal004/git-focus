@@ -28,12 +28,30 @@ export function PomodoroTimer() {
     const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
     const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 
+    // Task Stats
+    const [stats, setStats] = useState<{ totalEstimated: number, remainingEstimated: number } | null>(null);
+
     useEffect(() => {
         const removeListener = window.electron.onUpdateAvailable((info) => {
             setUpdateInfo(info);
             setShowUpdateDialog(true);
         });
         return () => removeListener();
+    }, []);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const s = await window.electron.getKanbanTaskStatistics();
+                setStats(s);
+            } catch (error) {
+                console.error("Failed to fetch task stats", error);
+            }
+        };
+        fetchStats();
+        // Poll every minute
+        const interval = setInterval(fetchStats, 60000);
+        return () => clearInterval(interval);
     }, []);
 
     usePomodoroEvents({
@@ -109,6 +127,16 @@ export function PomodoroTimer() {
                         {state.session && (
                             <div className="mt-2 text-sm text-primary uppercase tracking-widest opacity-80 font-bold animate-pulse">
                                 {state.isPaused ? '[PAUSED]' : '>>> FOCUSING...'}
+                            </div>
+                        )}
+                        {!state.session && stats && stats.remainingEstimated > 0 && (
+                            <div className="mt-4 text-xs font-mono text-muted-foreground border-t border-dashed pt-2">
+                                REQUIRED_FOCUS_TIME:: <span className="text-primary font-bold">{stats.remainingEstimated}m</span>
+                            </div>
+                        )}
+                        {!state.session && stats && stats.remainingEstimated === 0 && stats.totalEstimated > 0 && (
+                            <div className="mt-4 text-xs font-mono text-green-500 border-t border-dashed pt-2">
+                                ALL_TASKS_COMPLETED:: <span className="font-bold">Good Job!</span>
                             </div>
                         )}
                     </div>

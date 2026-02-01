@@ -99,6 +99,12 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON kanban_activity_log(created_at);
     `,
   },
+  {
+    version: 5,
+    sql: `
+      ALTER TABLE kanban_tasks ADD COLUMN estimated_time INTEGER;
+    `,
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

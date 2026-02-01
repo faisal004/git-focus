@@ -13,6 +13,7 @@ export function KanbanBoard() {
     const [loading, setLoading] = useState(true);
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const [newTaskLink, setNewTaskLink] = useState("");
+    const [newTaskTime, setNewTaskTime] = useState("");
     const [isAdding, setIsAdding] = useState(false);
     const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
     const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
@@ -21,6 +22,7 @@ export function KanbanBoard() {
     const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
     const [editTitle, setEditTitle] = useState("");
     const [editLink, setEditLink] = useState("");
+    const [editTime, setEditTime] = useState("");
     const [editSubtasks, setEditSubtasks] = useState<{ id: string, title: string }[]>([]);
 
     const [logs, setLogs] = useState<KanbanActivityLog[]>([]);
@@ -60,12 +62,14 @@ export function KanbanBoard() {
                 description: "",
                 status: "todo",
                 youtubeLink: newTaskLink.trim() || undefined,
+                estimatedTime: newTaskTime ? parseInt(newTaskTime) : undefined,
             });
             // Ensure subtasks is initialized
             const taskWithSubtasks = { ...newTask, subtasks: [] };
             setTasks([taskWithSubtasks, ...tasks]);
             setNewTaskTitle("");
             setNewTaskLink("");
+            setNewTaskTime("");
             setIsAdding(false);
         } catch (error) {
             console.error("Failed to create task:", error);
@@ -95,6 +99,7 @@ export function KanbanBoard() {
         setEditingTask(task);
         setEditTitle(task.title);
         setEditLink(task.youtubeLink || "");
+        setEditTime(task.estimatedTime?.toString() || "");
         setEditSubtasks(task.subtasks.map(s => ({ id: s.id, title: s.title })));
     };
 
@@ -106,7 +111,8 @@ export function KanbanBoard() {
             const updatedTask = {
                 ...editingTask,
                 title: editTitle,
-                youtubeLink: editLink.trim() || undefined
+                youtubeLink: editLink.trim() || undefined,
+                estimatedTime: editTime ? parseInt(editTime) : undefined,
             };
 
             await window.electron.updateKanbanTask(updatedTask);
@@ -299,9 +305,9 @@ export function KanbanBoard() {
                                         {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-semibold ${log.action === 'created' ? 'bg-green-500/10 text-green-500' :
-                                            log.action === 'deleted' ? 'bg-red-500/10 text-red-500' :
-                                                log.action === 'moved' ? 'bg-blue-500/10 text-blue-500' :
-                                                    'bg-gray-500/10 text-gray-500'
+                                        log.action === 'deleted' ? 'bg-red-500/10 text-red-500' :
+                                            log.action === 'moved' ? 'bg-blue-500/10 text-blue-500' :
+                                                'bg-gray-500/10 text-gray-500'
                                         }`}>
                                         {log.action.replace('_', ' ')}
                                     </span>
@@ -409,6 +415,17 @@ export function KanbanBoard() {
                                     className="w-full bg-background border rounded-md pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
                                 />
                             </div>
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">MIN</div>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={newTaskTime}
+                                    onChange={(e) => setNewTaskTime(e.target.value)}
+                                    placeholder="Est. Minutes (e.g. 60)"
+                                    className="w-full bg-background border rounded-md pl-12 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                            </div>
                         </div>
                     </form>
                     <DialogFooter>
@@ -446,6 +463,20 @@ export function KanbanBoard() {
                                 />
                             </div>
                         </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Estimated Time (Min)</label>
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">MIN</div>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={editTime}
+                                    onChange={(e) => setEditTime(e.target.value)}
+                                    className="w-full bg-background border rounded-md pl-12 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+                                    placeholder="Est. Minutes"
+                                />
+                            </div>
+                        </div>
 
                         {editSubtasks.length > 0 && (
                             <div className="space-y-2">
@@ -474,8 +505,8 @@ export function KanbanBoard() {
                         <Button variant="outline" onClick={() => setEditingTask(null)}>Cancel</Button>
                         <Button onClick={handleSaveEdit} disabled={!editTitle.trim()}>Save Changes</Button>
                     </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                </DialogContent >
+            </Dialog >
 
             {/* Delete Confirmation Alert Dialog */}
             <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
@@ -493,7 +524,7 @@ export function KanbanBoard() {
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
-            </AlertDialog>
+            </AlertDialog >
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full overflow-hidden">
                 {columns.map((col) => (
@@ -619,9 +650,16 @@ export function KanbanBoard() {
                                         </div>
 
                                         <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/30">
-                                            <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                                <Calendar size={10} />
-                                                {new Date(task.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                            <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                                <div className="flex items-center gap-1">
+                                                    <Calendar size={10} />
+                                                    {new Date(task.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                </div>
+                                                {task.estimatedTime && (
+                                                    <div className="flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-mono font-medium">
+                                                        ⏱ {task.estimatedTime}m
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -636,6 +674,6 @@ export function KanbanBoard() {
                     </ScrollArea>
                 ))}
             </div>
-        </div>
+        </div >
     );
 }

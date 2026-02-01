@@ -27,6 +27,7 @@ export type KanbanTask = {
     status: KanbanStatus;
     dueDate?: number;
     youtubeLink?: string;
+    estimatedTime?: number;
     createdAt: number;
     subtasks: KanbanSubtask[];
 };
@@ -38,6 +39,7 @@ type KanbanTaskRow = {
     status: string;
     due_date: number | null;
     youtube_link: string | null;
+    estimated_time: number | null;
     created_at: number;
 };
 
@@ -58,6 +60,11 @@ type KanbanActivityLogRow = {
     created_at: number;
 };
 
+type TaskStatistics = {
+    totalEstimated: number;
+    remainingEstimated: number; // For todo and in-progress tasks
+};
+
 function rowToTask(row: KanbanTaskRow, subtasks: KanbanSubtask[] = []): KanbanTask {
     return {
         id: row.id,
@@ -66,6 +73,7 @@ function rowToTask(row: KanbanTaskRow, subtasks: KanbanSubtask[] = []): KanbanTa
         status: row.status as KanbanStatus,
         dueDate: row.due_date || undefined,
         youtubeLink: row.youtube_link || undefined,
+        estimatedTime: row.estimated_time || undefined,
         createdAt: row.created_at,
         subtasks,
     };
@@ -83,13 +91,13 @@ function rowToSubtask(row: KanbanSubtaskRow): KanbanSubtask {
 
 export function createKanbanRepository(db: Database.Database) {
     const insertTask = db.prepare(`
-    INSERT INTO kanban_tasks (id, title, description, status, due_date, youtube_link, created_at)
-    VALUES (@id, @title, @description, @status, @due_date, @youtube_link, @created_at)
+    INSERT INTO kanban_tasks (id, title, description, status, due_date, youtube_link, estimated_time, created_at)
+    VALUES (@id, @title, @description, @status, @due_date, @youtube_link, @estimated_time, @created_at)
   `);
 
     const updateTask = db.prepare(`
     UPDATE kanban_tasks 
-    SET title = @title, description = @description, status = @status, due_date = @due_date, youtube_link = @youtube_link
+    SET title = @title, description = @description, status = @status, due_date = @due_date, youtube_link = @youtube_link, estimated_time = @estimated_time
     WHERE id = @id
   `);
 
@@ -142,6 +150,7 @@ export function createKanbanRepository(db: Database.Database) {
                 status: task.status,
                 dueDate: task.dueDate,
                 youtubeLink: task.youtubeLink,
+                estimatedTime: task.estimatedTime,
                 createdAt: Date.now(),
                 subtasks: [],
             };
@@ -153,6 +162,7 @@ export function createKanbanRepository(db: Database.Database) {
                 status: newTask.status,
                 due_date: newTask.dueDate || null,
                 youtube_link: newTask.youtubeLink || null,
+                estimated_time: newTask.estimatedTime || null,
                 created_at: newTask.createdAt,
             });
 
@@ -186,6 +196,7 @@ export function createKanbanRepository(db: Database.Database) {
                 status: task.status,
                 due_date: task.dueDate || null,
                 youtube_link: task.youtubeLink || null,
+                estimated_time: task.estimatedTime || null,
             });
 
             if (oldTask) {
@@ -248,11 +259,6 @@ export function createKanbanRepository(db: Database.Database) {
 
         toggleSubtask(id: string, completed: boolean): void {
             toggleSubtask.run(completed ? 1 : 0, id);
-            // We could log this, but it might be too noisy. User asked for "creation, movement, and deletion"
-            // But "keep the whole activity log ... added deleted moved any thing"
-            // Let's log subtask completion too as it's a significant action
-            // But to get task title we need a join or two queries.
-            // For now, let's skip subtask toggle to avoid perf hit or complexities, focused on main actions first.
         },
 
         deleteSubtask(id: string): void {
@@ -286,6 +292,16 @@ export function createKanbanRepository(db: Database.Database) {
                 details: row.details,
                 createdAt: row.created_at,
             }));
+        },
+
+        getTaskStatistics(): TaskStatistics {
+            const totalResult = db.prepare(`SELECT SUM(estimated_time) as total FROM kanban_tasks WHERE estimated_time IS NOT NULL`).get() as { total: number };
+            const remainingResult = db.prepare(`SELECT SUM(estimated_time) as total FROM kanban_tasks WHERE status != 'done' AND estimated_time IS NOT NULL`).get() as { total: number };
+
+            return {
+                totalEstimated: totalResult?.total || 0,
+                remainingEstimated: remainingResult?.total || 0,
+            };
         }
     };
 }
