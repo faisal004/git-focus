@@ -7,11 +7,12 @@ import { SettingsView } from './views/SettingsView';
 import { ModeToggle } from './components/mode-toggle';
 import { OnboardingView } from './views/OnboardingView';
 import { KanbanBoard } from './views/KanbanBoard';
+import { UsageAnalytics } from './views/UsageAnalytics';
 import { useSettings } from './hooks/useSettings';
 
 function App() {
   const { settings, loading } = useSettings();
-  const [activeTab, setActiveTab] = useState<'focus' | 'plan'>('focus');
+  const [activeTab, setActiveTab] = useState<'focus' | 'plan' | 'analytics'>('focus');
 
   if (loading) {
     return (
@@ -52,6 +53,15 @@ function App() {
             >
               Plan
             </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-4 py-1.5 rounded-sm text-sm font-medium transition-all ${activeTab === 'analytics'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                }`}
+            >
+              Analytics
+            </button>
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -76,13 +86,17 @@ function App() {
               <CommitHeatmap />
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'plan' ? (
           <div className="max-w-6xl mx-auto h-full">
             <KanbanBoard />
           </div>
+        ) : (
+          <div className="max-w-6xl mx-auto h-full">
+            <UsageAnalytics />
+          </div>
         )}
       </main>
-    </div>
+    </div >
   );
 }
 

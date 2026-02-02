@@ -91,6 +91,22 @@ type ViolationEvent = {
   gracePeriodExpired: boolean;
 };
 
+interface UsageLog {
+  id: string;
+  appName: string;
+  windowTitle: string;
+  url?: string;
+  startTime: number;
+  endTime?: number;
+  durationSeconds?: number;
+  createdAt: number;
+}
+
+interface UsageStats {
+  appName: string;
+  totalDuration: number;
+}
+
 type ActiveWindowInfo = {
   processName: string;
   windowTitle: string;
@@ -259,6 +275,9 @@ interface Window {
     updateKanbanSubtaskTitle: (id: string, title: string) => Promise<void>;
     deleteKanbanSubtask: (id: string) => Promise<void>;
     getKanbanActivityLog: () => Promise<KanbanActivityLog[]>;
+    // Usage Tracking API
+    getUsageStats: (startDate: number, endDate: number) => Promise<UsageStats[]>;
+    getUsageTimeline: (startDate: number, endDate: number) => Promise<UsageLog[]>;
   };
 }
 
