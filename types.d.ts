@@ -214,6 +214,14 @@ type EventPayloadMapping = {
   "kanban:updateSubtaskTitle": void;
   "kanban:deleteSubtask": void;
   "kanban:getActivityLog": KanbanActivityLog[];
+
+  // Usage Tracking
+  "usage:getStats": { appName: string; totalDuration: number }[];
+  "usage:getTimeline": UsageLog[];
+
+  // Window/App State
+  "app:mini-mode": boolean;
+  "window:expand": void;
 };
 
 interface Window {
@@ -278,6 +286,10 @@ interface Window {
     // Usage Tracking API
     getUsageStats: (startDate: number, endDate: number) => Promise<UsageStats[]>;
     getUsageTimeline: (startDate: number, endDate: number) => Promise<UsageLog[]>;
+
+    // Window/App API
+    onMiniModeChange: (callback: (isMini: boolean) => void) => UnsubscribeFunction;
+    expandWindow: () => Promise<void>;
   };
 }
 

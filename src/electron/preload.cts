@@ -63,6 +63,10 @@ electron.contextBridge.exposeInMainWorld('electron', {
   // === USAGE TRACKING API ===
   getUsageStats: (startDate: number, endDate: number) => ipcInvokeWithArgs('usage:getStats', { startDate, endDate }),
   getUsageTimeline: (startDate: number, endDate: number) => ipcInvokeWithArgs('usage:getTimeline', { startDate, endDate }),
+
+  // === WINDOW/APP API ===
+  onMiniModeChange: (callback: (isMini: boolean) => void) => ipcOn('app:mini-mode', callback),
+  expandWindow: () => ipcInvoke('window:expand'),
 } satisfies Window['electron']);
 
 function ipcInvoke<Key extends keyof EventPayloadMapping>(
