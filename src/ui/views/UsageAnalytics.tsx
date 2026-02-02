@@ -15,8 +15,8 @@ export function UsageAnalytics() {
     const [stats, setStats] = useState<UsageStats[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const loadData = async () => {
-        setLoading(true);
+    const loadData = async (silent: boolean = false) => {
+        if (!silent) setLoading(true);
         try {
             const now = new Date();
             let startDate = new Date();
@@ -35,14 +35,21 @@ export function UsageAnalytics() {
             setStats(data || []);
         } catch (error) {
             console.error("Failed to load usage stats:", error);
-            setStats([]); // clear stats on error
+            if (!silent) setStats([]); // clear stats on error only if generic load
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
     useEffect(() => {
         loadData();
+
+        // Poll for updates every 5 seconds
+        const interval = setInterval(() => {
+            loadData(true);
+        }, 5000);
+
+        return () => clearInterval(interval);
     }, [timeRange]);
 
     const formatDuration = (seconds: number) => {

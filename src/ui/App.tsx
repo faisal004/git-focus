@@ -9,6 +9,9 @@ import { OnboardingView } from './views/OnboardingView';
 import { KanbanBoard } from './views/KanbanBoard';
 import { UsageAnalytics } from './views/UsageAnalytics';
 import { useSettings } from './hooks/useSettings';
+function TabPanel({ active, children }: { active: boolean; children: React.ReactNode }) {
+  return <div className={active ? 'block' : 'hidden'}>{children}</div>;
+}
 
 function App() {
   const { settings, loading } = useSettings();
@@ -73,7 +76,7 @@ function App() {
       <UpdateNotification />
 
       <main className="flex-1 overflow-auto p-4">
-        {activeTab === 'focus' ? (
+        <TabPanel active={activeTab === 'focus'}>
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1 h-full">
               <PomodoroTimer />
@@ -86,15 +89,17 @@ function App() {
               <CommitHeatmap />
             </div>
           </div>
-        ) : activeTab === 'plan' ? (
+        </TabPanel>
+        <TabPanel active={activeTab === 'plan'}>
           <div className="max-w-6xl mx-auto h-full">
             <KanbanBoard />
           </div>
-        ) : (
+        </TabPanel>
+        <TabPanel active={activeTab === 'analytics'}>
           <div className="max-w-6xl mx-auto h-full">
             <UsageAnalytics />
           </div>
-        )}
+        </TabPanel>
       </main>
     </div >
   );
